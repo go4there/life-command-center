@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Command Center - Personal Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.6); }
+        }
+        .avatar-glow { animation: pulse-glow 3s infinite; }
+    </style>
+</head>
+<body class="h-full bg-slate-900 text-slate-100 antialiased flex flex-col selection:bg-emerald-500 selection:text-white">
+
+    <!-- AUTHENTICATION SCREEN -->
+    <div id="authScreen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 mx-auto rounded-2xl flex items-center justify-center text-3xl font-extrabold shadow-lg shadow-emerald-500/20">
+                    ⚡
+                </div>
+                <h2 class="text-2xl font-extrabold text-white tracking-tight">Life Command Center</h2>
+                <p class="text-xs text-slate-400">Silakan login untuk mengakses ruang komando pribadi Anda.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">ID Pengguna / Username</label>
+                    <input type="text" id="authUsername" value="admin" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Password</label>
+                    <input type="password" id="authPassword" value="password123" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button onclick="handleLogin()" class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm rounded-xl transition-all shadow-md shadow-emerald-500/20 cursor-pointer">
+                        Login via ID & PW
+                    </button>
+                    <button onclick="handleFaceId()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-sm rounded-xl border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer" title="Simulasi Face ID">
+                        📷 Face ID
+                    </button>
+                </div>
+            </div>
+            <p class="text-[11px] text-center text-slate-500">Default: User <span class="text-slate-400 font-mono">admin</span> | Pass <span class="text-slate-400 font-mono">password123</span></p>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER (Hidden until authenticated) -->
+    <div id="mainAppWrapper" class="flex flex-col h-full hidden">
+        <header class="bg-slate-800/80 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 p-2.5 rounded-2xl shadow-lg shadow-emerald-500/20 font-extrabold text-lg">
+                        ⚡
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-extrabold text-white tracking-tight flex items-center gap-2">
+                            Life Command Center <span class="text-xs font-semibold px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30">Personal OS</span>
+                        </h1>
+                        <p class="text-xs text-slate-400">Target: Humas Kementerian 🇮🇩 & Content Creator Profesional</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="openTab('dashboard')" id="nav-dashboard" class="nav-btn px-4 py-2 text-sm font-semibold rounded-xl transition-all bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 cursor-pointer">Dashboard</button>
+                    <button onclick="openTab('strategy')" id="nav-strategy" class="nav-btn px-4 py-2 text-sm font-semibold rounded-xl transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">Analisis & Saran AI</button>
+                    <button onclick="openSyncModal()" class="px-3.5 py-2 text-sm font-semibold rounded-xl transition-all bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 cursor-pointer flex items-center gap-1.5" title="Koneksi & Sinkronisasi Data">
+                        🔌 Sync Data Pribadi
+                    </button>
+                    <button onclick="handleLogout()" class="px-3 py-2 text-sm font-semibold rounded-xl transition-all text-slate-400 hover:text-red-400 hover:bg-slate-700/50 cursor-pointer" title="Keluar">🚪 Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 overflow-y-auto custom-scrollbar">
+
+            <!-- DASHBOARD TAB CONTENT -->
+            <div id="tab-dashboard" class="space-y-8">
+                
+                <!-- AVATAR COMPANION & QURANIC REMINDER GRID -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    
+                    <!-- Avatar Companion Card -->
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl border border-slate-700/80 shadow-xl flex flex-col items-center justify-between text-center space-y-4">
+                        <div class="w-full flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">AI Companion</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                        </div>
+                        
+                        <!-- Animated Avatar Illustration (SVG Cartoon You) -->
+                        <div class="relative w-28 h-28 mx-auto animate-float avatar-glow rounded-full bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border-2 border-emerald-500/40 flex items-center justify-center cursor-pointer overflow-hidden group" onclick="changeAvatarMood()">
+                            <svg class="w-20 h-20 text-emerald-400 group-hover:scale-105 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="8" r="4" fill="#34d399" fill-opacity="0.2"/>
+                                <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke-linecap="round"/>
+                                <circle cx="10" cy="7" r="0.75" fill="currentColor"/>
+                                <circle cx="14" cy="7" r="0.75" fill="currentColor"/>
+                                <path d="M10.5 10c.8 0 1.5.5 2 1" stroke-linecap="round"/>
+                                <!-- Professional Glasses / Headset hint for Gov & Creator -->
+                                <path d="M7 6h10" stroke-width="1"/>
+                            </svg>
+                            <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] font-bold text-white">Ganti Ekspresi</div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-extrabold text-white text-base" id="avatarName">Humas & Kreator Muda</h4>
+                            <p class="text-xs text-slate-400 italic mt-1" id="avatarSpeech">"Semangat! Hari ini target kementerian & konten reels pasti beres!"</p>
+                        </div>
+                    </div>
+
+                    <!-- Quranic Reminder Card -->
+                    <div class="lg:col-span-3 bg-gradient-to-r from-emerald-950/60 via-slate-800 to-teal-950/40 p-6 rounded-3xl border border-emerald-500/30 shadow-xl relative overflow-hidden flex flex-col justify-between">
+                        <div class="absolute -right-10 -bottom-10 text-9xl text-emerald-500/5 font-extrabold select-none pointer-events-none">📖</div>
+                        <div class="flex items-start justify-between relative z-10">
+                            <div class="space-y-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-bold rounded-lg uppercase tracking-wider border border-emerald-500/30">Quranic Reminder Hari Ini</span>
+                                    <span class="text-xs text-slate-400" id="currentMoodBadge">Suasana Hati: Tenang & Fokus</span>
+                                </div>
+                                <h3 class="text-xl sm:text-2xl font-bold text-emerald-200 tracking-wide font-serif" id="quranVerseArabic">"فَإِنَّ مَعَ الْعُسْرِ يُسْرًا • إِنَّ مَعَ الْعُسْرِ يُسْرًا"</h3>
+                                <p class="text-sm font-medium text-slate-200 italic" id="quranVerseTranslation">"Maka sesungguhnya bersama kesulitan ada kemudahan. Sesungguhnya bersama kesulitan ada kemudahan." (QS. Al-Insyirah: 5-6)</p>
+                                <p class="text-xs text-slate-400 pt-1" id="quranVerseNotes">💡 <span class="font-semibold text-emerald-300">Catatan Refleksi:</span> Ketika beban kerja humas dan konten menumpuk, ingatlah bahwa Allah sudah menyiapkan solusi kemudahan di setiap celah kesulitan.</p>
+                            </div>
+                            <button onclick="refreshQuranReminder()" class="p-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition-all text-xs flex items-center gap-1.5 cursor-pointer shadow-sm">
+                                🔄 Ganti Reminder
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Quick Status Grid (WA, Financial, Email, Projects) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    
+                    <!-- WhatsApp Unread -->
+                    <div onclick="openModal('wa')" class="bg-slate-800/70 hover:bg-slate-800 p-5 rounded-3xl border border-slate-700/80 shadow-lg transition-all cursor-pointer group flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                            </span>
+                            <span class="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">WhatsApp</span>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Chat Belum Dibalas</p>
+                            <h3 class="text-3xl font-extrabold text-white mt-1" id="statWaCount">0</h3>
+                            <p class="text-xs text-slate-400 mt-2 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> <span id="statWaPriority">Prioritas: Klien & Keluarga</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Financial Net Worth & Cashflow -->
+                    <div onclick="openModal('finance')" class="bg-slate-800/70 hover:bg-slate-800 p-5 rounded-3xl border border-slate-700/80 shadow-lg transition-all cursor-pointer group flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="p-3 bg-blue-500/10 text-blue-400 rounded-2xl group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </span>
+                            <span class="text-xs font-semibold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20">Finansial</span>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Net Worth</p>
+                            <h3 class="text-2xl font-extrabold text-white mt-1" id="statNetWorth">Rp 0</h3>
+                            <p class="text-xs text-emerald-400 mt-2 font-medium" id="statCashflow">Cashflow Bersih: +Rp 0 /bln</p>
+                        </div>
+                    </div>
+
+                    <!-- Email Unread -->
+                    <div onclick="openModal('email')" class="bg-slate-800/70 hover:bg-slate-800 p-5 rounded-3xl border border-slate-700/80 shadow-lg transition-all cursor-pointer group flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="p-3 bg-purple-500/10 text-purple-400 rounded-2xl group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            </span>
+                            <span class="text-xs font-semibold text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-full border border-purple-500/20">Email</span>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Email Wajib Dibalas</p>
+                            <h3 class="text-3xl font-extrabold text-white mt-1" id="statEmailCount">0</h3>
+                            <p class="text-xs text-slate-400 mt-2">Peluang kolaborasi & sponsorship</p>
+                        </div>
+                    </div>
+
+                    <!-- Projects Running & Soon -->
+                    <div onclick="openModal('project')" class="bg-slate-800/70 hover:bg-slate-800 p-5 rounded-3xl border border-slate-700/80 shadow-lg transition-all cursor-pointer group flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="p-3 bg-amber-500/10 text-amber-400 rounded-2xl group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2m-6 9l2 2 4-4"/></svg>
+                            </span>
+                            <span class="text-xs font-semibold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">Proyek</span>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Running / Soon</p>
+                            <h3 class="text-2xl font-extrabold text-white mt-1"><span id="statRunningProjects">0</span> <span class="text-sm font-normal text-slate-400">Running</span> / <span id="statSoonProjects" class="text-amber-400">0</span> <span class="text-sm font-normal text-slate-400">Soon</span></h3>
+                            <p class="text-xs text-slate-400 mt-2">Content & Public Relations</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Middle Row: Career Goal & Blind Spot Opportunities -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Skill Tracker: Humas Kementerian & Content Creator -->
+                    <div class="lg:col-span-2 bg-slate-800/70 p-6 rounded-3xl border border-slate-700/80 shadow-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-6">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white">Target & Skill Tracker Masa Depan</h3>
+                                    <p class="text-xs text-slate-400">Persiapan Karier: Humas Kementerian & Content Creator Profesional</p>
+                                </div>
+                                <button onclick="openSkillModal()" class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer">+ Tambah Skill</button>
+                            </div>
+                            
+                            <div class="space-y-4" id="skillTrackerContainer">
+                                <!-- Injected dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Blind Spot & Peluang Emas -->
+                    <div class="bg-slate-800/70 p-6 rounded-3xl border border-slate-700/80 shadow-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-white flex items-center gap-2"><span>👁️</span> Blind Spot & Peluang</h3>
+                                <button onclick="openBlindSpotModal()" class="text-xs text-emerald-400 hover:underline font-semibold cursor-pointer">+ Tambah</button>
+                            </div>
+                            <p class="text-xs text-slate-400 mb-4">Analisis celah tersembunyi yang bisa Anda kembangkan saat ini:</p>
+                            
+                            <div class="space-y-3" id="blindSpotContainer">
+                                <!-- Injected dynamically -->
+                            </div>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-700 text-center">
+                            <span class="text-xs text-emerald-400 font-semibold cursor-pointer hover:underline" onclick="openTab('strategy')">✨ Lihat Analisis & Rekomendasi AI Lengkap &rarr;</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- STRATEGY & AI ADVICE TAB CONTENT -->
+            <div id="tab-strategy" class="space-y-6 hidden">
+                <div class="bg-slate-800/80 p-8 rounded-3xl border border-slate-700 shadow-2xl space-y-6">
+                    <div class="flex items-center space-x-3 border-b border-slate-700 pb-4">
+                        <div class="p-3 bg-emerald-500/20 text-emerald-400 rounded-2xl text-xl">🧠</div>
+                        <div>
+                            <h2 class="text-xl font-extrabold text-white">Analisis Strategis Hidup & Pengembangan Diri</h2>
+                            <p class="text-xs text-slate-400">Sinkronisasi antara target Humas Pemerintah, Content Creator, dan kestabilan finansial Anda.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-700/60 space-y-3">
+                            <h4 class="font-bold text-emerald-400 text-sm flex items-center gap-2">🏛️ Strategi Menuju Humas Kementerian</h4>
+                            <ul class="text-xs text-slate-300 space-y-2 list-disc pl-4">
+                                <li><strong class="text-white">Public Speaking & Crisis Communication:</strong> Kuasai teknik press release, UU Keterbukaan Informasi Publik (KIP), dan simulasi konferensi pers.</li>
+                                <li><strong class="text-white">Personal Branding LinkedIn:</strong> Buat minimal 2 konten per minggu tentang analisis kebijakan publik atau komunikasi strategis pemerintahan.</li>
+                                <li><strong class="text-white">Bahasa Asing:</strong> Perkuat sertifikasi TOEFL/TOEIC karena humas kementerian sering mendampingi delegasi internasional.</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-700/60 space-y-3">
+                            <h4 class="font-bold text-purple-400 text-sm flex items-center gap-2">🎥 Strategi Menjadi Content Creator Sukses</h4>
+                            <ul class="text-xs text-slate-300 space-y-2 list-disc pl-4">
+                                <li><strong class="text-white">Niche Edukasi & Gov-Tech:</strong> Gabungkan passion humas dengan konten kreatif (edukasi kebijakan, tips birokrasi, atau storytelling publik).</li>
+                                <li><strong class="text-white">Konsistensi & Batching:</strong> Jadwalkan pembuatan konten di akhir pekan agar tidak mengganggu fokus kerja utama.</li>
+                                <li><strong class="text-white">Monetisasi Dini:</strong> Buka peluang konsultasi, afiliasi, atau konten berbayar dengan brand yang sejalan.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-teal-950/40 to-emerald-950/40 p-6 rounded-2xl border border-emerald-500/30 space-y-3">
+                        <h4 class="font-bold text-white text-sm">💡 Rekomendasi Fitur Tambahan (Saran AI untuk Anda)</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Berdasarkan profil Anda yang ambisius dan ingin menyambungkan semua aspek hidup, berikut fitur lanjutan yang sangat disarankan untuk ditambahkan ke depan:
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+                                <span class="text-emerald-400 font-bold text-xs block mb-1">1. Habit & Energy Tracker</span>
+                                <span class="text-xs text-slate-400">Melacak jam produktif harian, waktu ibadah, dan tingkat energi fisik agar terhindar dari burnout.</span>
+                            </div>
+                            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+                                <span class="text-emerald-400 font-bold text-xs block mb-1">2. Network & CRM Relasi</span>
+                                <span class="text-xs text-slate-400">Database relasi penting di pemerintahan, media, dan creator lain agar koneksi terjaga secara berkala.</span>
+                            </div>
+                            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+                                <span class="text-emerald-400 font-bold text-xs block mb-1">3. Daily Journal & Mood AI</span>
+                                <span class="text-xs text-slate-400">Pencatatan refleksi harian otomatis yang mencocokkan kondisi emosi dengan ayat Al-Quran penenang.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL POPUP CONTAINER -->
+    <div id="genericModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-700 overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
+                <h3 id="modalTitle" class="font-bold text-white text-lg">Kelola Data</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition-all cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4" id="modalBody">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SYNC WIZARD MODAL -->
+    <div id="syncModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 rounded-3xl max-w-2xl w-full shadow-2xl border border-teal-500/40 overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-teal-950/30">
+                <h3 class="font-bold text-white text-lg flex items-center gap-2">🔌 Pusat Sinkronisasi & Koneksi Data Pribadi</h3>
+                <button onclick="closeSyncModal()" class="text-slate-400 hover:text-white p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition-all cursor-pointer">✕</button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6 text-xs">
+                <p class="text-slate-300 leading-relaxed">
+                    Karena keterbatasan privasi browser dan sistem keamanan enkripsi end-to-end milik WhatsApp, Email, & Bank, Anda dapat menghubungkan data secara instan melalui 3 metode di bawah ini:
+                </p>
+
+                <!-- Method 1: Quick Preset / Auto Import -->
+                <div class="bg-slate-800/70 p-4 rounded-2xl border border-slate-700 space-y-3">
+                    <h4 class="font-bold text-teal-400 text-sm">1. Metode Cepat (Preset Otomatis Kehidupan Nyata)</h4>
+                    <p class="text-slate-400">Pilih skenario profil Anda saat ini agar data langsung terisi otomatis:</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="applyPreset('humas')" class="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl border border-teal-500/30 text-left cursor-pointer transition-all">
+                            🏛️ Profil Aktif Humas Kementerian
+                        </button>
+                        <button onclick="applyPreset('creator')" class="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl border border-purple-500/30 text-left cursor-pointer transition-all">
+                            🎥 Profil Aktif Content Creator
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Method 2: Manual API Webhook / CSV Sync Simulation -->
+                <div class="bg-slate-800/70 p-4 rounded-2xl border border-slate-700 space-y-3">
+                    <h4 class="font-bold text-emerald-400 text-sm">2. Hubungkan Akun Utama (Simulasi Integrasi API)</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-semibold">Nomor WhatsApp / WhatsApp Web API Endpoint</label>
+                            <input type="text" id="syncWaInput" placeholder="Contoh: 081234567890 (Tersambung ke WA Business)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-semibold">Email Utama (Gmail / Outlook)</label>
+                            <input type="text" id="syncEmailInput" placeholder="namaanda@gmail.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-semibold">Sinkronisasi Rekening & Dompet Digital</label>
+                            <select id="syncBankSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white">
+                                <option value="BCA">BCA / Mandiri / Jago (Auto-sync e-Statement)</option>
+                                <option value="Manual">Input Manual Terpusat</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="saveApiSyncSettings()" class="w-full py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-xl transition-all cursor-pointer">Simpan & Test Koneksi API</button>
+                </div>
+
+                <!-- Method 3: JSON Backup / Restore -->
+                <div class="bg-slate-800/70 p-4 rounded-2xl border border-slate-700 space-y-3">
+                    <h4 class="font-bold text-amber-400 text-sm">3. Impor / Ekspor File Data Cadangan (.JSON)</h4>
+                    <p class="text-slate-400">Anda bisa mendownload seluruh data Life Command Center ini ke file komputer, atau upload ulang saat berganti perangkat.</p>
+                    <div class="flex gap-3">
+                        <button onclick="exportDataJson()" class="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold rounded-xl border border-slate-700 cursor-pointer">📥 Download Backup JSON</button>
+                        <label class="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-emerald-400 font-bold rounded-xl border border-slate-700 text-center cursor-pointer">
+                            📤 Upload File JSON <input type="file" id="importFile" onchange="importDataJson(event)" class="hidden" accept=".json">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Centralized App State
+        let appData = JSON.parse(localStorage.getItem('life_command_center')) || {
+            whatsapp: [
+                { id: '1', sender: 'Ibu', message: 'Jangan lupa makan siang ya nak, kabari kalau sudah sampai.', time: '10:30', priority: 'Tinggi', unread: true },
+                { id: '2', sender: 'Client Kemenparekraf (Revisi Konten)', message: 'Halo kak, untuk draft video reels minggu ini bisa dipercepat revisinya?', time: '09:15', priority: 'Tinggi', unread: true },
+                { id: '3', sender: 'Rekan Tim Kreatif', message: 'Meeting jam 3 sore ini via Zoom ya.', time: 'Kemarin', priority: 'Sedang', unread: true }
+            ],
+            finance: {
+                cash: 8500000,
+                bank: 24500000,
+                investments: 15000000,
+                income: 12000000,
+                expense: 4500000
+            },
+            emails: [
+                { id: '1', sender: 'sponsorship@brandlokal.id', subject: 'Penawaran Kolaborasi Campaign Q4', deadline: 'Besok', unread: true },
+                { id: '2', sender: 'hr.kementerian@gov.id', subject: 'Informasi Webinar & Pelatihan Kehumasan Publik', deadline: '3 hari lagi', unread: true }
+            ],
+            projects: [
+                { id: '1', title: 'Content Series "Bedah Kebijakan Publik"', status: 'Running', category: 'Content Creator', deadline: '20 Okt 2026' },
+                { id: '2', title: 'Portofolio Kemen-PR & Publikasi', status: 'Running', category: 'Humas', deadline: '25 Okt 2026' },
+                { id: '3', title: 'Workshop Public Speaking Kementerian', status: 'Soon', category: 'Humas', deadline: '10 Nov 2026' },
+                { id: '4', title: 'Brand Deal Year-End Campaign', status: 'Soon', category: 'Content Creator', deadline: '1 Des 2026' }
+            ],
+            skills: [
+                { name: 'Public Speaking & Media Relations', category: 'Humas', progress: 75, target: 'Level Mahir (Sertifikasi Nasional)' },
+                { name: 'Copywriting & Press Release Gov', category: 'Humas', progress: 60, target: 'Standar Kemenpan RB' },
+                { name: 'Video Editing & Storytelling (CapCut/Premiere)', category: 'Content Creator', progress: 85, target: '100k Followers Aktif' },
+                { name: 'Personal Branding & Audience Engagement', category: 'Content Creator', progress: 70, target: 'Konsisten 3x Upload/Minggu' }
+            ],
+            blindSpots: [
+                { title: 'Monetisasi Komunitas Privat', desc: 'Anda punya banyak audiens edukasi tapi belum membuat channel Telegram/Discord eksklusif berbayar.', impact: 'Potensi tambahan pasif income Rp 3-5 jt/bln' },
+                { title: 'Kolaborasi Lintas Instansi', desc: 'Belum merangkul humas muda dari kementerian lain untuk kolaborasi konten edukasi birokrasi.', impact: 'Akselerasi networking nasional & organic reach' }
+            ],
+            quranMoods: [
+                { mood: 'Tenang & Fokus', arabic: '"فَإِنَّ مَعَ الْعُسْرِ يُسْرًا • إِنَّ مَعَ الْعُسْرِ يُسْرًا"', translation: '"Maka sesungguhnya bersama kesulitan ada kemudahan. Sesungguhnya bersama kesulitan ada kemudahan." (QS. Al-Insyirah: 5-6)', notes: 'Ketika beban kerja humas dan konten menumpuk, ingatlah bahwa Allah sudah menyiapkan solusi kemudahan di setiap celah kesulitan.' },
+                { mood: 'Gelisah / Cemas', arabic: '"الَّذِينَ آمَنُوا وَتَطْمَئِنُّ قُلُوبُهُمْ بِذِكْرِ اللَّهِ ۗ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ"', translation: '"(Yaitu) orang-orang yang beriman dan hati mereka menjadi tenteram dengan mengingat Allah. Ingatlah, hanya dengan mengingat Allah hati menjadi tenteram." (QS. Ar-Ra\'d: 28)', notes: 'Tarik napas dalam-dalam, lepaskan kekhawatiran masa depan, dan kembalikan fokus pada ikhtiar hari ini.' },
+                { mood: 'Semangat Tinggi', arabic: '"وَأَنْ لَيْسَ لِلْإِنْسَانِ إِلَّا مَا سَعَىٰ • وَأَنَّ سَعْيَهُ سَوْفَ يُرَىٰ"', translation: '"Dan bahwa manusia hanya memperoleh apa yang telah diusahakannya, dan sesungguhnya usahanya itu kelak akan diperlihatkan (kepadanya)." (QS. An-Najm: 39-40)', notes: 'Energi positif Anda hari ini adalah modal utama melangkah ke kementerian impian dan karya kreator terbaik.' }
+            ],
+            avatarQuotes: [
+                "Semangat! Target kementerian & konten reels hari ini pasti beres!",
+                "Tenang, rezeki & kemudahan sudah diatur. Yuk fokus berkarya!",
+                "Jaga kesehatan ya! Jangan lupa istirahat di sela-sela deadline.",
+                "Public relations hebat dimulai dari ketenangan hati."
+            ]
+        };
+
+        // Authentication logic
+        function handleLogin() {
+            const user = document.getElementById('authUsername').value;
+            const pass = document.getElementById('authPassword').value;
+            if(user === 'admin' && pass === 'password123') {
+                grantAccess();
+            } else {
+                alert('ID atau Password salah! Gunakan admin / password123');
+            }
+        }
+
+        function handleFaceId() {
+            const btn = event.currentTarget;
+            btn.textContent = "⏳ Memindai Wajah...";
+            setTimeout(() => {
+                grantAccess();
+            }, 1200);
+        }
+
+        function grantAccess() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('mainAppWrapper').classList.remove('hidden');
+            renderDashboard();
+        }
+
+        function handleLogout() {
+            document.getElementById('mainAppWrapper').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+        }
+
+        function changeAvatarMood() {
+            const quotes = appData.avatarQuotes;
+            const random = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('avatarSpeech').textContent = `"${random}"`;
+        }
+
+        function saveData() {
+            localStorage.setItem('life_command_center', JSON.stringify(appData));
+            renderDashboard();
+        }
+
+        function openTab(tabName) {
+            document.getElementById('tab-dashboard').classList.add('hidden');
+            document.getElementById('tab-strategy').classList.add('hidden');
+            document.getElementById('nav-dashboard').className = "nav-btn px-4 py-2 text-sm font-semibold rounded-xl transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer";
+            document.getElementById('nav-strategy').className = "nav-btn px-4 py-2 text-sm font-semibold rounded-xl transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer";
+
+            if (tabName === 'dashboard') {
+                document.getElementById('tab-dashboard').classList.remove('hidden');
+                document.getElementById('nav-dashboard').className = "nav-btn px-4 py-2 text-sm font-semibold rounded-xl transition-all bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 cursor-pointer";
+            } else {
+                document.getElementById('tab-strategy').classList.remove('hidden');
+                document.getElementById('nav-strategy').className = "nav-btn px-4 py-2 text-sm font-semibold rounded-xl transition-all bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 cursor-pointer";
+            }
+        }
+
+        function refreshQuranReminder() {
+            const moods = appData.quranMoods;
+            const random = moods[Math.floor(Math.random() * moods.length)];
+            document.getElementById('currentMoodBadge').textContent = `Suasana Hati: ${random.mood}`;
+            document.getElementById('quranVerseArabic').textContent = random.arabic;
+            document.getElementById('quranVerseTranslation').textContent = random.translation;
+            document.getElementById('quranVerseNotes').innerHTML = `💡 <span class="font-semibold text-emerald-300">Catatan Refleksi:</span> ${random.notes}`;
+        }
+
+        function renderDashboard() {
+            // Stats WA
+            const unreadWa = appData.whatsapp.filter(w => w.unread).length;
+            document.getElementById('statWaCount').textContent = unreadWa;
+
+            // Stats Finance
+            const netWorth = appData.finance.cash + appData.finance.bank + appData.finance.investments;
+            const netCashflow = appData.finance.income - appData.finance.expense;
+            document.getElementById('statNetWorth').textContent = formatRupiah(netWorth);
+            document.getElementById('statCashflow').textContent = `Cashflow Bersih: +${formatRupiah(netCashflow)} /bln`;
+
+            // Stats Email
+            const unreadEmail = appData.emails.filter(e => e.unread).length;
+            document.getElementById('statEmailCount').textContent = unreadEmail;
+
+            // Stats Projects
+            const runningProj = appData.projects.filter(p => p.status === 'Running').length;
+            const soonProj = appData.projects.filter(p => p.status === 'Soon').length;
+            document.getElementById('statRunningProjects').textContent = runningProj;
+            document.getElementById('statSoonProjects').textContent = soonProj;
+
+            // Skills Render
+            const skillContainer = document.getElementById('skillTrackerContainer');
+            skillContainer.innerHTML = '';
+            appData.skills.forEach((skill, idx) => {
+                skillContainer.innerHTML += `
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-700/60 space-y-2">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-white">${skill.name}</span>
+                            <span class="px-2 py-0.5 bg-slate-800 text-emerald-400 font-semibold rounded-lg border border-slate-700">${skill.category} • ${skill.progress}%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style="width: ${skill.progress}%"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-[11px] text-slate-400">
+                            <span>Target: ${skill.target}</span>
+                            <button onclick="updateSkillProgress(${idx})" class="text-emerald-400 hover:underline font-semibold cursor-pointer">Update Progress</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Blind Spot Render
+            const bsContainer = document.getElementById('blindSpotContainer');
+            bsContainer.innerHTML = '';
+            appData.blindSpots.forEach((bs, idx) => {
+                bsContainer.innerHTML += `
+                    <div class="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-700/60 space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-emerald-300">${bs.title}</span>
+                            <button onclick="deleteBlindSpot(${idx})" class="text-slate-500 hover:text-red-400 text-xs cursor-pointer">✕</button>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">${bs.desc}</p>
+                        <p class="text-[10px] text-amber-400 font-semibold pt-1">🎯 ${bs.impact}</p>
+                    </div>
+                `;
+            });
+        }
+
+        function formatRupiah(number) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number);
+        }
+
+        // Modals management
+        function openModal(type) {
+            const modal = document.getElementById('genericModal');
+            const title = document.getElementById('modalTitle');
+            const body = document.getElementById('modalBody');
+            body.innerHTML = '';
+
+            if (type === 'wa') {
+                title.textContent = '💬 WhatsApp Unread Tracker';
+                let html = `<div class="space-y-3">`;
+                appData.whatsapp.forEach((chat, i) => {
+                    html += `
+                        <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-white text-sm">${chat.sender}</h4>
+                                <p class="text-xs text-slate-300 mt-0.5">${chat.message}</p>
+                                <span class="text-[10px] text-slate-400 mt-1 block">Waktu: ${chat.time} • Prioritas: ${chat.priority}</span>
+                            </div>
+                            <button onclick="markWaRead(${i})" class="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-semibold rounded-xl border border-emerald-500/30 cursor-pointer">Tandai Dibales</button>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                body.innerHTML = html;
+            } else if (type === 'finance') {
+                title.textContent = '💰 Finansial & Cashflow';
+                body.innerHTML = `
+                    <div class="space-y-4 text-xs">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
+                                <label class="text-slate-400 block mb-1">Cash (Dompet)</label>
+                                <input type="number" id="finCash" value="${appData.finance.cash}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
+                            </div>
+                            <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
+                                <label class="text-slate-400 block mb-1">Bank / E-Wallet</label>
+                                <input type="number" id="finBank" value="${appData.finance.bank}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
+                            </div>
+                            <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
+                                <label class="text-slate-400 block mb-1">Investasi / Crypto / Reksadana</label>
+                                <input type="number" id="finInv" value="${appData.finance.investments}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
+                            </div>
+                            <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
+                                <label class="text-slate-400 block mb-1">Pemasukan Bulanan</label>
+                                <input type="number" id="finInc" value="${appData.finance.income}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
+                            </div>
+                        </div>
+                        <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
+                            <label class="text-slate-400 block mb-1">Pengeluaran Bulanan</label>
+                            <input type="number" id="finExp" value="${appData.finance.expense}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white font-bold">
+                        </div>
+                        <button onclick="saveFinance()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition-all cursor-pointer">Simpan Perubahan Finansial</button>
+                    </div>
+                `;
+            } else if (type === 'email') {
+                title.textContent = '📧 Email Belum Dibalas';
+                let html = `<div class="space-y-3">`;
+                appData.emails.forEach((mail, i) => {
+                    html += `
+                        <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-white text-sm">${mail.sender}</h4>
+                                <p class="text-xs text-slate-300 mt-0.5 font-medium">${mail.subject}</p>
+                                <span class="text-[10px] text-amber-400 mt-1 block">Deadline: ${mail.deadline}</span>
+                            </div>
+                            <button onclick="markEmailRead(${i})" class="px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-xs font-semibold rounded-xl border border-purple-500/30 cursor-pointer">Selesai Dibalas</button>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                body.innerHTML = html;
+            } else if (type === 'project') {
+                title.textContent = '🚀 Proyek Running & Soon';
+                let html = `<div class="space-y-4"><div class="space-y-3">`;
+                appData.projects.forEach((p, i) => {
+                    html += `
+                        <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${p.status === 'Running' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">${p.status}</span>
+                                <h4 class="font-bold text-white text-sm mt-1">${p.title}</h4>
+                                <span class="text-[10px] text-slate-400">Kategori: ${p.category} • Target: ${p.deadline}</span>
+                            </div>
+                            <button onclick="deleteProject(${i})" class="text-slate-500 hover:text-red-400 text-xs cursor-pointer p-2">Hapus</button>
+                        </div>
+                    `;
+                });
+                html += `</div>
+                    <div class="pt-4 border-t border-slate-800 space-y-3">
+                        <h4 class="font-bold text-white text-xs">Tambah Proyek Baru</h4>
+                        <input type="text" id="newProjTitle" placeholder="Judul Proyek..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-xs text-white">
+                        <div class="grid grid-cols-2 gap-2">
+                            <select id="newProjStatus" class="bg-slate-800 border border-slate-700 rounded-xl p-2 text-xs text-white">
+                                <option value="Running">Running</option>
+                                <option value="Soon">Soon</option>
+                            </select>
+                            <select id="newProjCategory" class="bg-slate-800 border border-slate-700 rounded-xl p-2 text-xs text-white">
+                                <option value="Humas">Humas</option>
+                                <option value="Content Creator">Content Creator</option>
+                            </select>
+                        </div>
+                        <button onclick="addNewProject()" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl cursor-pointer">Tambah Proyek</button>
+                    </div>
+                </div>`;
+                body.innerHTML = html;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('genericModal').classList.add('hidden');
+        }
+
+        function markWaRead(index) {
+            appData.whatsapp.splice(index, 1);
+            saveData();
+            openModal('wa');
+        }
+
+        function markEmailRead(index) {
+            appData.emails.splice(index, 1);
+            saveData();
+            openModal('email');
+        }
+
+        function deleteProject(index) {
+            appData.projects.splice(index, 1);
+            saveData();
+            openModal('project');
+        }
+
+        function addNewProject() {
+            const title = document.getElementById('newProjTitle').value;
+            const status = document.getElementById('newProjStatus').value;
+            const category = document.getElementById('newProjCategory').value;
+            if(!title) return;
+            appData.projects.push({ id: Date.now().toString(), title, status, category, deadline: 'Segera' });
+            saveData();
+            openModal('project');
+        }
+
+        function saveFinance() {
+            appData.finance.cash = Number(document.getElementById('finCash').value);
+            appData.finance.bank = Number(document.getElementById('finBank').value);
+            appData.finance.investments = Number(document.getElementById('finInv').value);
+            appData.finance.income = Number(document.getElementById('finInc').value);
+            appData.finance.expense = Number(document.getElementById('finExp').value);
+            saveData();
+            closeModal();
+        }
+
+        function updateSkillProgress(index) {
+            const current = appData.skills[index].progress;
+            const newVal = prompt("Masukkan persentase progress skill (0-100):", current);
+            if(newVal !== null) {
+                const parsed = Math.min(100, Math.max(0, Number(newVal)));
+                appData.skills[index].progress = parsed;
+                saveData();
+            }
+        }
+
+        function openSkillModal() {
+            const name = prompt("Nama Skill / Kompetensi baru:");
+            if(!name) return;
+            const category = prompt("Kategori (Humas / Content Creator):", "Humas");
+            appData.skills.push({ name, category: category || 'Umum', progress: 10, target: 'Level Mahir' });
+            saveData();
+        }
+
+        function openBlindSpotModal() {
+            const title = prompt("Judul Peluang / Blind Spot:");
+            if(!title) return;
+            const desc = prompt("Deskripsi analisis peluang:");
+            const impact = prompt("Estimasi Dampak / Potensi:", "Potensi kenaikan karir / cuan");
+            appData.blindSpots.push({ title, desc, impact });
+            saveData();
+        }
+
+        // Sync Modal Management
+        function openSyncModal() {
+            document.getElementById('syncModal').classList.remove('hidden');
+        }
+
+        function closeSyncModal() {
+            document.getElementById('syncModal').classList.add('hidden');
+        }
+
+        function applyPreset(type) {
+            if(type === 'humas') {
+                appData.whatsapp.push({ id: Date.now().toString(), sender: 'Biro Humas Kementerian', message: 'Mohon siapkan press release untuk konferensi pers hari Senin.', time: 'Baru saja', priority: 'Tinggi', unread: true });
+                appData.emails.push({ id: Date.now().toString(), sender: 'protokol@setneg.go.id', subject: 'Undangan Briefing Kehumasan Nasional', deadline: 'Besok', unread: true });
+                appData.finance.income += 5000000;
+            } else {
+                appData.whatsapp.push({ id: Date.now().toString(), sender: 'Agensi Brand F&B', message: 'Kak, deal untuk 3 reels bulan ini ya. Kirim invoice ke mana?', time: 'Baru saja', priority: 'Tinggi', unread: true });
+                appData.emails.push({ id: Date.now().toString(), sender: 'management@tiktokcreator.id', subject: 'Peluang Partnership Creator Camp 2026', deadline: '3 hari', unread: true });
+                appData.finance.income += 8000000;
+            }
+            saveData();
+            closeSyncModal();
+            alert('Preset berhasil disinkronkan ke Dashboard Anda!');
+        }
+
+        function saveApiSyncSettings() {
+            const wa = document.getElementById('syncWaInput').value;
+            const email = document.getElementById('syncEmailInput').value;
+            alert(`Koneksi API Berhasil diuji!\nNomor WA: ${wa || 'Tersambung'}\nEmail: ${email || 'Tersambung'}\nData tersinkronisasi aman.`);
+            closeSyncModal();
+        }
+
+        function exportDataJson() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "life_command_center_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importDataJson(event) {
+            const fileReader = new FileReader();
+            if(event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = function(e) {
+                    try {
+                        appData = JSON.parse(e.target.result);
+                        saveData();
+                        closeSyncModal();
+                        alert('Data berhasil diimpor dengan sukses!');
+                    } catch(err) {
+                        alert('Format file JSON tidak valid.');
+                    }
+                };
+            }
+        }
+    </script>
+</body>
+</html>
